@@ -3,7 +3,7 @@ title: "dimension tableのsurrogate keyの実装について"
 emoji: "🔑"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["BigQuery", "dbt", "data", "データモデリング"]
-published: false
+published: true
 ---
 
 # このブログについて
