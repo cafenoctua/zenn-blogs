@@ -20,6 +20,7 @@ Mac のストレージが 300GB 以上圧迫されていることに気づいた
 「書類」カテゴリでの使用量が異常に大きく表示されており、原因がわからない状態。
 
 ディスク構成：
+
 - SSD 500GB
 - Data ボリューム: 362GB 使用中（77.8%）
 
@@ -82,9 +83,22 @@ tail -50 ~/.local/state/nvim/lsp.log
 ### なぜ lsp.log が肥大化したか
 
 1. **rust-analyzer の内部バグ** により、循環参照の解析中にパニックが発生
+   - salsa（インクリメンタルコンパイルのクエリエンジン）の計算グラフ内でサイクルを検出した際、前回の実行でパニックした「サイクルの先頭ノード」のパニック状態が現在の実行に伝播するバグ
+   - バージョン 0.3.2786 のリグレッション。保存のたびに salsa のサイクル再計算がトリガーされ、そのたびにパニック伝播の警告が出続ける
+   - 参照: [rust-analyzer Issue #21610](https://github.com/rust-lang/rust-analyzer/issues/21610), [rust-analyzer Issue #21617](https://github.com/rust-lang/rust-analyzer/issues/21617), [rust-analyzer Issue #2446](https://github.com/rust-lang/rust-analyzer/issues/2446)
+
 2. `"Propagating panic for cycle head..."` というエラーが**ループして大量出力**された
-3. Neovim は LSP の通信内容をデフォルトで `lsp.log` に全量書き出す
+   - Issue #21617 では「ログに同メッセージが繰り返し出力される」と複数ユーザーが報告
+   - 参照: [rust-analyzer Issue #21617](https://github.com/rust-lang/rust-analyzer/issues/21617)
+
+3. Neovim は LSP の通信内容をデフォルトで `lsp.log` に **WARN レベル以上** 書き出す
+   - デフォルトのログレベルは `WARN`。今回の rust-analyzer のエラーも WARN として stderr に出力されているため、デフォルト設定でそのまま記録される
+   - 参照: [neovim/runtime/lua/vim/lsp/log.lua](https://github.com/neovim/neovim/blob/master/runtime/lua/vim/lsp/log.lua)
+
 4. ログのローテーション機能がないため、無制限に肥大化し続けた
+   - log.lua のソースコード上、1GB を超えると警告通知が出るが、ローテーション・自動削除は一切行われない。追記モードで書き続けるだけ
+   - 250GiB に達したユーザーの実例報告もある
+   - 参照: [LunarVim Issue #4537](https://github.com/LunarVim/LunarVim/issues/4537), [Neovim Discourse: "LSP log file grows infinitely"](https://neovim.discourse.group/t/lsp-log-file-grows-infinitely/3596), [neovim Issue #32106](https://github.com/neovim/neovim/issues/32106)
 
 ### lsp.log の場所
 
