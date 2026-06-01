@@ -1,2 +1,19 @@
+# Dependencies
 node_modules/
+
+# Claude Code session logs (private)
 .claude/session/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.*
+
+# Zenn CLI cache
+.cache/
